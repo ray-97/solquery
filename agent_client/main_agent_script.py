@@ -71,7 +71,7 @@ async def run_gemini_agent_with_solquery():
     # 7. Test with some queries
     queries = [
         "What is the current sentiment around the Tensorians NFT collection on Solana?",
-        "Can you give me a portfolio overview for wallet GUMB9NqjH1hpKpsLBELLCHzDsnHAbm5esS2h5a11jN and also tell me the floor price of Mad Lads?",
+        "Can you give me a portfolio overview for wallet GUMB9NqjH1hpKpsLBELLCHzDsnHAbm5esS2h5a11jN and also tell me the floor price of Mad Lads?", # an arbitrary wallet address, maybe test with something that made a transaction recently (ie. from SolScan, SolanaFM or Solana Block Explorer)
         "What are the latest DeFi activities for wallet ADDRESS_XYZ?" # Replace ADDRESS_XYZ
     ]
 
