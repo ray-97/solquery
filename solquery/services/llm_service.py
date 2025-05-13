@@ -1,5 +1,4 @@
 import google.generativeai as genai
-from google.generativeai.types import HarmCategory, HarmBlockThreshold, FunctionCall
 from ..core.config import settings
 from .tool_definitions import SOLQUERY_TOOL_CONFIG # Import the tool configuration
 from typing import Dict, Any, List, Optional, Tuple, Union

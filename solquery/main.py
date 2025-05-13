@@ -74,9 +74,16 @@ async def handle_query_endpoint(request: QueryRequest):
                     action_result = {"info": f"Mock SPL balances for {wallet_addr}", "tool_args": arguments}
                 
                 elif tool_name == "get_wallet_nft_collection":
-                    wallet_addr = arguments.get("wallet_address", user_context.get("default_wallet_address"))
-                    if not wallet_addr: raise ValueError("Wallet address missing for get_wallet_nft_collection")
-                    action_result = await data_sources.get_nfts_for_wallet(wallet_addr)
+                    wallet_addr = arguments.get("wallet_address") # Extracted by LLM
+                    if not wallet_addr: wallet_addr = user_context.get("default_wallet_address")
+                    
+                    page = arguments.get("page", 1) # LLM could also extract these if needed
+                    limit = arguments.get("limit", 50) # Or use a default
+
+                    if not wallet_addr: 
+                        action_result = {"error": "Wallet address is required for fetching NFTs and was not provided."}
+                    else:
+                        action_result = await data_sources.get_nfts_for_wallet(wallet_addr, page=page, limit=limit)
                 
                 elif tool_name == "get_nft_collection_sentiment":
                     collection_name = arguments.get("collection_name")
