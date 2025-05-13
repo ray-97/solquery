@@ -65,7 +65,7 @@ async def handle_query_endpoint(request: QueryRequest):
                     if not wallet_addr: raise ValueError("Wallet address missing for get_wallet_portfolio_summary")
                     # For this MVP, let's assume get_sol_balance is what portfolio summary means for now
                     action_result = await data_sources.get_sol_balance(wallet_addr)
-                    # In a full impl, this would call a portfolio_service.get_summary(wallet_addr)
+                    # In a full impl, this would call a portfolio_service.get_summary(wallet_addr) # todo
                 
                 elif tool_name == "get_detailed_spl_token_balances":
                     wallet_addr = arguments.get("wallet_address", user_context.get("default_wallet_address"))
@@ -76,14 +76,12 @@ async def handle_query_endpoint(request: QueryRequest):
                 elif tool_name == "get_wallet_nft_collection":
                     wallet_addr = arguments.get("wallet_address", user_context.get("default_wallet_address"))
                     if not wallet_addr: raise ValueError("Wallet address missing for get_wallet_nft_collection")
-                    action_result = await data_sources.get_nfts_for_wallet(wallet_addr) # Uses placeholder from data_sources.py
+                    action_result = await data_sources.get_nfts_for_wallet(wallet_addr)
                 
                 elif tool_name == "get_nft_collection_sentiment":
                     collection_name = arguments.get("collection_name")
                     if not collection_name: raise ValueError("Collection name missing for sentiment analysis")
-                    # Step 1: Fetch some text about the collection (placeholder)
-                    # text_about_collection = f"Recent news about {collection_name} shows great promise and community excitement!"
-                    text_about_collection = await data_sources.get_text_for_sentiment_analysis_nft(collection_name) # You'd need to implement this
+                    text_about_collection = await data_sources.get_text_for_sentiment_analysis_nft(collection_name)
                     if text_about_collection.get("error"): raise Exception(text_about_collection.get("error"))
                     action_result = await llm_service.analyze_sentiment_with_llm(text_about_collection.get("text"), topic=collection_name)
 
@@ -91,7 +89,7 @@ async def handle_query_endpoint(request: QueryRequest):
                     token_id = arguments.get("token_symbol_or_mint_address")
                     if not token_id: raise ValueError("Token identifier missing for sentiment analysis")
                     # text_about_token = f"The market is buzzing about {token_id} due to new partnerships."
-                    text_about_token = await data_sources.get_text_for_sentiment_analysis_token(token_id) # You'd need to implement this
+                    text_about_token = await data_sources.get_text_for_sentiment_analysis_token(token_id)
                     if text_about_token.get("error"): raise Exception(text_about_token.get("error"))
                     action_result = await llm_service.analyze_sentiment_with_llm(text_about_token.get("text"), topic=token_id)
                 
@@ -121,7 +119,7 @@ async def handle_query_endpoint(request: QueryRequest):
         # For MVP, just return the raw results. Later, could send to LLM for summarization.
         return QueryResponse(
             success=True,
-            answer={"aggregated_results": final_results} if len(final_results) > 1 else final_results[0],
+            answer={"aggregated_results": final_results} if len(final_results) > 1 else final_results[0], #todo: consider how to format this
             data_source_used=", ".join(data_sources_used) if data_sources_used else "LLM + Various Solana APIs",
             llm_trace={"routing_decision": routing_decision}
         )
