@@ -1,119 +1,150 @@
+# solquery/main.py (relevant parts modified)
 from fastapi import FastAPI, HTTPException, Depends
 from contextlib import asynccontextmanager
+import json # For potential parsing if LLM stringifies JSON
 
 from .core.config import settings
 from .schemas.common_schemas import QueryRequest, QueryResponse, ErrorDetail
-from .services import data_sources, llm_service, portfolio_service, sentiment_service # portfolio & sentiment are placeholders for now
+from .services import data_sources, llm_service 
+# Assume portfolio_service and sentiment_service will be called by functions triggered by llm
+# For example, get_nft_collection_sentiment tool would trigger a flow involving data_sources and then llm_service.analyze_sentiment_with_llm
 
-# Lifespan manager for startup and shutdown events
+# Lifespan function (ensure llm_service.configure_gemini_if_needed() is called)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     print(f"SolQuery starting up...")
-    print(f"Log Level: {settings.LOG_LEVEL}")
-    print(f"Default Solana Network: {settings.DEFAULT_SOLANA_NETWORK}")
-    
-    # Configure Gemini API (safer to do it once here)
-    llm_service.configure_gemini_if_needed()
-    print(f"Helius API Key Loaded: {'Yes' if settings.HELIUS_API_KEY and 'FALLBACK' not in settings.HELIUS_API_KEY else 'No/Fallback/Not Set Correctly'}")
-    # print(f"BitQuery API Key Loaded: {'Yes' if settings.BITQUERY_API_KEY else 'No'}")
-    
+    llm_service.configure_gemini_if_needed() # Initialize Gemini configuration
     await data_sources.init_http_client()
     print("HTTP client initialized.")
-    
     yield
-    
-    # Shutdown
     await data_sources.close_http_client()
     print("HTTP client closed.")
     print("SolQuery shutting down.")
 
 app = FastAPI(title="SolQuery", version="0.1.0", lifespan=lifespan)
 
-# Placeholder for actual wallet address extraction for MVP
-# In a real app, this would come from the LLM or user input more directly
-TEST_WALLET_ADDRESS = "ReplaceWithRealSolanaAddressForTesting" # e.g., a known whale or your own devnet wallet
+# Placeholder for default wallet if user context is implemented later
+DEFAULT_TEST_WALLET = "3tA8PjUvrep7UT9LNWnHZQmQ5bg646YuZnt7xLiQAXEe" # Use a real address for testing
 
 @app.post("/query", response_model=QueryResponse)
 async def handle_query_endpoint(request: QueryRequest):
     print(f"Received query: '{request.query_text}' from user_id: {request.user_id}")
 
-    llm_routing_result = await llm_service.route_query_with_llm(request.query_text)
-    
-    if llm_routing_result.get("error"):
+    # user_context might include default wallet_address, etc.
+    user_context = {"default_wallet_address": DEFAULT_TEST_WALLET} # Example context
+
+    routing_decision = await llm_service.route_query_with_llm(request.query_text, user_context)
+
+    if routing_decision.get("error"):
         return QueryResponse(
             success=False,
-            answer="Could not process query due to LLM routing error.",
-            llm_trace=llm_routing_result,
-            error=ErrorDetail(type="LLMRoutingError", message=llm_routing_result["error"])
+            answer=f"LLM Routing Error: {routing_decision['error']}",
+            llm_trace={"routing_decision": routing_decision},
+            error=ErrorDetail(type="LLMRoutingError", message=routing_decision['error'])
         )
 
-    intent = llm_routing_result.get("intent")
-    entities = llm_routing_result.get("entities", {})
-    llm_direct_answer = llm_routing_result.get("llm_direct_answer")
+    actions = routing_decision.get("actions")
+    direct_answer = routing_decision.get("direct_answer")
+    clarification_needed = routing_decision.get("clarification_needed")
 
-    response_data = {}
-    data_source_name = "LLM"
+    final_results = []
+    data_sources_used = []
 
-    try:
-        if intent == "get_balance":
-            # For MVP, using a test wallet address. Later, extract from 'entities' or request
-            wallet_address = entities.get("wallet_address_placeholder", TEST_WALLET_ADDRESS)
-            if "YOUR_WALLET_ADDRESS_HERE" in wallet_address or "ReplaceWithRealSolanaAddress" in wallet_address:
-                 print(f"WARNING: Using placeholder or unconfigured test wallet address: {wallet_address}")
-            
-            balance_data = await data_sources.get_sol_balance(wallet_address)
-            if balance_data.get("error"):
-                raise Exception(f"Data source error for get_balance: {balance_data['error']}")
-            response_data = balance_data
-            data_source_name = "Solana RPC (via Helius/Provider)"
+    if actions:
+        for action in actions:
+            tool_name = action.get("tool_name")
+            arguments = action.get("arguments", {})
+            print(f"LLM wants to call tool: {tool_name} with args: {arguments}")
+            data_sources_used.append(f"Tool: {tool_name}")
+
+            action_result = None
+            try:
+                if tool_name == "get_wallet_portfolio_summary":
+                    # Ensure wallet_address is present, fallback to default if logic allows
+                    wallet_addr = arguments.get("wallet_address", user_context.get("default_wallet_address"))
+                    if not wallet_addr: raise ValueError("Wallet address missing for get_wallet_portfolio_summary")
+                    # For this MVP, let's assume get_sol_balance is what portfolio summary means for now
+                    action_result = await data_sources.get_sol_balance(wallet_addr)
+                    # In a full impl, this would call a portfolio_service.get_summary(wallet_addr)
+                
+                elif tool_name == "get_detailed_spl_token_balances":
+                    wallet_addr = arguments.get("wallet_address", user_context.get("default_wallet_address"))
+                    if not wallet_addr: raise ValueError("Wallet address missing for get_detailed_spl_token_balances")
+                    # action_result = await portfolio_service.get_spl_balances(wallet_addr) # Placeholder
+                    action_result = {"info": f"Mock SPL balances for {wallet_addr}", "tool_args": arguments}
+                
+                elif tool_name == "get_wallet_nft_collection":
+                    wallet_addr = arguments.get("wallet_address", user_context.get("default_wallet_address"))
+                    if not wallet_addr: raise ValueError("Wallet address missing for get_wallet_nft_collection")
+                    action_result = await data_sources.get_nfts_for_wallet(wallet_addr) # Uses placeholder from data_sources.py
+                
+                elif tool_name == "get_nft_collection_sentiment":
+                    collection_name = arguments.get("collection_name")
+                    if not collection_name: raise ValueError("Collection name missing for sentiment analysis")
+                    # Step 1: Fetch some text about the collection (placeholder)
+                    # text_about_collection = f"Recent news about {collection_name} shows great promise and community excitement!"
+                    text_about_collection = await data_sources.get_text_for_sentiment_analysis_nft(collection_name) # You'd need to implement this
+                    if text_about_collection.get("error"): raise Exception(text_about_collection.get("error"))
+                    action_result = await llm_service.analyze_sentiment_with_llm(text_about_collection.get("text"), topic=collection_name)
+
+                elif tool_name == "get_token_sentiment":
+                    token_id = arguments.get("token_symbol_or_mint_address")
+                    if not token_id: raise ValueError("Token identifier missing for sentiment analysis")
+                    # text_about_token = f"The market is buzzing about {token_id} due to new partnerships."
+                    text_about_token = await data_sources.get_text_for_sentiment_analysis_token(token_id) # You'd need to implement this
+                    if text_about_token.get("error"): raise Exception(text_about_token.get("error"))
+                    action_result = await llm_service.analyze_sentiment_with_llm(text_about_token.get("text"), topic=token_id)
+                
+                elif tool_name == "get_transaction_history":
+                    wallet_addr = arguments.get("wallet_address", user_context.get("default_wallet_address"))
+                    limit = arguments.get("limit", 10)
+                    if not wallet_addr: raise ValueError("Wallet address missing for transaction history")
+                    # action_result = await data_sources.get_transaction_history(wallet_addr, limit) # Placeholder
+                    action_result = {"info": f"Mock transaction history for {wallet_addr} (limit {limit})", "tool_args": arguments}
+
+                else:
+                    action_result = {"error": f"Unknown tool: {tool_name}"}
+
+                if action_result and action_result.get("error"):
+                    # Propagate error from the service call
+                     final_results.append({tool_name: {"error": action_result["error"], "details": action_result.get("details")}})
+                elif action_result:
+                    final_results.append({tool_name: action_result})
+
+            except Exception as e:
+                print(f"Error executing tool {tool_name}: {e}")
+                final_results.append({tool_name: {"error": f"Execution failed: {str(e)}"}})
         
-        elif intent == "get_nfts":
-            wallet_address = entities.get("wallet_address_placeholder", TEST_WALLET_ADDRESS)
-            if "YOUR_WALLET_ADDRESS_HERE" in wallet_address or "ReplaceWithRealSolanaAddress" in wallet_address:
-                 print(f"WARNING: Using placeholder or unconfigured test wallet address: {wallet_address}")
-
-            # This will call the placeholder for now
-            nft_data = await data_sources.get_nfts_for_wallet(wallet_address)
-            if nft_data.get("error"):
-                raise Exception(f"Data source error for get_nfts: {nft_data['error']}")
-            response_data = nft_data
-            data_source_name = "Solana NFT API (e.g., Helius DAS)"
-
-        elif intent == "get_sentiment":
-            topic = entities.get("topic_placeholder", request.query_text) # Use full query as topic if not extracted
-            # For MVP, let's analyze the original query text for sentiment
-            # In a real scenario, you'd fetch news/social data related to 'topic'
-            # and then pass that combined text to the sentiment analyzer.
-            sentiment_result = await llm_service.analyze_sentiment_with_llm(topic)
-            if sentiment_result.get("error"):
-                raise Exception(f"LLM error for get_sentiment: {sentiment_result['error']}")
-            response_data = sentiment_result
-            data_source_name = "LLM (Gemini for Sentiment)"
-            
-        elif llm_direct_answer: # Fallback from llm_router
-            response_data = {"text": llm_direct_answer}
-            data_source_name = "LLM (Gemini Direct)"
-            
-        else:
-            # Fallback if intent is not specifically handled yet by DeFi/NFT services
-            response_data = {"info": f"Intent '{intent}' recognized but not yet fully implemented. Entities: {entities}"}
-            data_source_name = "SolQuery System (Intent recognized)"
-
+        if not final_results: # Should not happen if actions were present and handled
+            return QueryResponse(success=False, answer="LLM suggested actions, but execution yielded no results.", llm_trace=routing_decision, error=ErrorDetail(type="ExecutionError", message="No results from actions"))
+        
+        # For MVP, just return the raw results. Later, could send to LLM for summarization.
         return QueryResponse(
             success=True,
-            answer=response_data,
-            data_source_used=data_source_name,
-            llm_trace={"routing_intent": intent, "routing_entities": entities}
+            answer={"aggregated_results": final_results} if len(final_results) > 1 else final_results[0],
+            data_source_used=", ".join(data_sources_used) if data_sources_used else "LLM + Various Solana APIs",
+            llm_trace={"routing_decision": routing_decision}
         )
 
-    except Exception as e:
-        print(f"Error processing query: {e}")
+    elif clarification_needed:
+        return QueryResponse(
+            success=True, # Or False depending on how you want to flag this
+            answer=clarification_needed,
+            data_source_used="LLM (Requesting Clarification)",
+            llm_trace={"routing_decision": routing_decision}
+        )
+        
+    elif direct_answer:
+        return QueryResponse(
+            success=True,
+            answer=direct_answer,
+            data_source_used="LLM (Direct Answer)",
+            llm_trace={"routing_decision": routing_decision}
+        )
+    else:
         return QueryResponse(
             success=False,
-            answer=f"Failed to process query: {str(e)}",
-            llm_trace={"routing_intent": intent, "routing_entities": entities},
-            error=ErrorDetail(type="ProcessingError", message=str(e))
+            answer="LLM could not determine an appropriate action or provide an answer.",
+            llm_trace={"routing_decision": routing_decision},
+            error=ErrorDetail(type="LLMNoActionError", message="No action determined by LLM")
         )
-
-# To run from parent directory (solquery_project): uvicorn solquery.main:app --reload

@@ -82,3 +82,17 @@ async def get_defi_positions(wallet_address: str) -> Dict[str, Any]:
     print(f"Placeholder: Fetching DeFi positions for {wallet_address}")
     # Implement API calls to Bitquery/Moralis or specific DeFi protocol APIs
     return {"info": f"DeFi positions for {wallet_address} would be fetched here."}
+
+# Add to solquery/services/data_sources.py
+
+async def get_text_for_sentiment_analysis_nft(collection_name: str) -> Dict[str, Any]:
+    # MVP: Return mock text.
+    # TODO: Implement actual fetching of news/social data for this NFT collection
+    print(f"Fetching text for sentiment analysis for NFT Collection: {collection_name}")
+    return {"text": f"Recent discussions about {collection_name} have been very positive, with many influencers highlighting its unique art and community engagement. The floor price has seen a steady increase over the past week."}
+
+async def get_text_for_sentiment_analysis_token(token_id: str) -> Dict[str, Any]:
+    # MVP: Return mock text.
+    # TODO: Implement actual fetching of news/social data for this token
+    print(f"Fetching text for sentiment analysis for Token: {token_id}")
+    return {"text": f"There's a lot of buzz around {token_id} after its recent mainnet upgrade. However, some analysts are cautious about its short-term volatility despite strong fundamentals."}

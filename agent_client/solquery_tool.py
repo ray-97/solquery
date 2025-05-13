@@ -19,6 +19,8 @@ class SolQueryTool(BaseTool):
         "wallet portfolio summaries (token balances, NFT counts), transaction history, "
         "and sentiment analysis concerning Solana tokens and NFT collections. "
         "Input should be a clear, natural language question. For example: 'What is the floor price of Mad Lads NFTs?' or 'Show my SOL balance and recent transactions for wallet X.' or 'What's the current sentiment for $JUP?'"
+        "For each question, only ask for one type of information at a time. "
+        "For example, if you want to know about your NFTs and your SOL balance, ask them in two separate questions. "
     )
     args_schema: Type[BaseModel] = SolQueryInput
     solquery_api_url: str = "http://127.0.0.1:8000/query"  # Make this configurable if needed

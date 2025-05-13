@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     GOOGLE_GEMINI_API_KEY: str = "YOUR_GEMINI_API_KEY_FALLBACK"
     # Add other settings as needed, e.g., default Solana network
 
+    DEFAULT_SOLANA_NETWORK: str = "mainnet-beta" # or "devnet"
+    LOG_LEVEL: str = "INFO"
+
     # This allows loading from a .env file
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding='utf-8', extra='ignore')
 
