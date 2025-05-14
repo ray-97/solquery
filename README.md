@@ -31,3 +31,16 @@ cool addresses to test with according to Nansen:
 - 4EtAJ1p8RjqccEVhEhaYnEgQ6kA4JHR8oYqyLFwARUj6 (labeled "90D Smart Trader" with significant profit in TRUMP token)
 - HWdeCUjBvPP1HJ5oCJt7aNsvMWpWoDgiejUWvfFX6T7R (labeled "Multiple Memecoin Whale" with profit in FARTCOIN)
 - fwHknyxZTgFGytVz9VPrvWqipW2V4L4D99gEb831t81 (labeled "Top 100 on AI16Z Leaderboard" with profit in AI16Z token)   
+
+
+support:
+"Where can I find co-working spaces in Fukuoka that accept USDC on Solana?"
+"List some local restaurants or cafes near Tenjin that are crypto-friendly."
+"How can I pay for a local artisan's crafts using Solana?"
+"Tell me about regional revitalization projects in Kyushu I can learn about or support."
+"Are there any digital nomad communities or Web3 meetups happening in Fukuoka this month?"
+"Can you recommend any local artists or creators in Fukuoka who accept crypto payments?"
+"How can I find local events or festivals in Fukuoka that accept crypto payments?"
+"What are the benefits of paying with USDC on Solana here (e.g., low fees, speed)?"
+"How can my small shop in Fukuoka start accepting USDC on Solana?" (The agent could provide general info or links to resources).
+"Can you verify payments made to local businesses address xxx in Fukuoka using Solana?" -> mock!
