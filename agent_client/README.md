@@ -23,6 +23,10 @@ It comprises two main components:
 
 **Agent Name:** `solquery_connector_agent` (SolQuery Connector for Fukuoka Assist)
 
+FetchAI Agent addresses:
+- agent1qgvk9fyef9pjn97dm8htwp2x8a2n0ugj02xkv6nh9rddrzrmh3j8ytgemzf
+- agent1qts5p3wswc4hzrkar4that7e6kjwapc80hzn6mk209nrzkytulfl78fajr5
+
 **Description:**
 This uAgent serves as a crucial link in the "Fukuoka Nomad Assist" ecosystem. Its primary role is to receive structured tasks or processed natural language queries—ideally refined by an initial LLM like Fetch.ai's ASI1-Mini from a user-facing chat interface. These queries are focused on assisting users navigating Fukuoka, Japan, particularly digital nomads and tourists.
 
