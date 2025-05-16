@@ -43,4 +43,12 @@ support:
 "How can I find local events or festivals in Fukuoka that accept crypto payments?"
 "What are the benefits of paying with USDC on Solana here (e.g., low fees, speed)?"
 "How can my small shop in Fukuoka start accepting USDC on Solana?" (The agent could provide general info or links to resources).
-"Can you verify payments made to local businesses address xxx in Fukuoka using Solana?" -> mock!
+"Can you verify payments made to local businesses address HxBbHRcyQf69cFLox5ckGtxAKfzdgiJe8gsCDzd6fpDS in Fukuoka using Solana?"!
+
+
+
+- Where can I find co-working spaces in Tenjin, Fukuoka that accept USDC on Solana?
+- What's my SOL balance for wallet 4EtAJ1p8RjqccEVhEhaYnEgQ6kA4JHR8oYqyLFwARUj6?
+- Show me NFTs for HWdeCUjBvPP1HJ5oCJt7aNsvMWpWoDgiejUWvfFX6T7R
+- What are my SPL token balances for fwHknyxZTgFGytVz9VPrvWqipW2V4L4D99gEb831t81?
+- What's the sentiment on Mad Lads?
